@@ -19,7 +19,7 @@
       <input type="file" id="image-input" multiple accept="image/jpeg, image/png, image/jpg">
     </div>
     <div class="input-wrapper">
-      <label class="input-label">Watermark</label>
+      <label id="watermark-input-label">Watermark</label>
       <input type="file" id="watermark-input" accept="image/jpeg, image/png, image/jpg">
     </div>
     <div class="input-wrapper">
@@ -38,7 +38,7 @@
       <span id="scale-display">100%</span>
     </div>
 	 <div class="input-wrapper">
-		<label for="padding-input">Padding:</label>
+		<label for="padding-input">Padding</label>
 		<input type="number" id="padding-input" min="0" value="100" step="1">
     </div>
 	
@@ -79,6 +79,9 @@
   <script src="static/js/app.js"></script>
   
   <p>Warning: This is just a quick prototype for myself to tinker with. There is likely bugs!</p>
+  <p>Notes/Tips:
+ <ul><ol></ol></ul>
 <p><a href="https://www.instagram.com/Bearden.Art" target="_blank">Bearden.Art</a></p>
+<p>Last updated: <span id="last-updated"></span></p>
 </body>
 </html>

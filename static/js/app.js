@@ -19,6 +19,15 @@ $(document).ready(function() {
     paddingRange.on("input", interruptAndUpdatePreview);
 	imageInput.on("change", updatePreviewIfFilesExist);
 	watermarkInput.on("change", updatePreviewIfFilesExist);
+	 $("#watermark-input").on("input", async (e) => {
+		if (e.target.files.length === 0) return;
+
+		const file = e.target.files[0];
+		const base64String = await blobToBase64(file);
+		sessionStorage.setItem("watermarkImage", base64String);
+	  });
+	
+	
 	$('#download-all-button').click(downloadAllAsZip);
 
     positionSelect.on('change', function() {
@@ -39,7 +48,7 @@ $(document).ready(function() {
 
     paddingRange.on('input', function() {
         const padding = parseInt($(this).val());
-		paddingRange.text(`${padding}%`);
+		paddingRange.text(`${percentage}%`);
 		saveSettings();
         updatePreview();
     });
@@ -58,10 +67,10 @@ $(document).ready(function() {
         const opacity = parseFloat(opacityRange.val());
         const padding = parseInt(paddingRange.val());
 
-        if (!imageInput[0].files.length || !watermarkInput[0].files.length) {
-            alert('Please select both image(s) and a watermark.');
-            return;
-        }
+		 if (!imageInput[0].files.length || (!watermarkInput[0].files.length && !sessionStorage.getItem("savedWatermark"))) {
+			alert('Please select both image(s) and a watermark.');
+			return;
+		  }
 
         const watermarkImg = await loadImageFromFile(watermarkInput[0].files[0]);
         const scaledWatermark = scaleImage(watermarkImg, scale);
@@ -441,5 +450,46 @@ $(document).ready(function() {
 	  link.click();
 	  document.body.removeChild(link);
 	}
+	
+	function blobToBase64(blob) {
+	  return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result);
+		reader.onerror = reject;
+		reader.readAsDataURL(blob);
+	  });
+	}
+	
+	async function loadWatermarkFromSession() {
+		 const savedWatermarkBase64String = sessionStorage.getItem("watermarkImage");
+
+		  
+		  if (savedWatermarkBase64String) {
+			const response = await fetch(savedWatermarkBase64String);
+			const blob = await response.blob();
+
+			const file = new File([blob], "watermark.png", { type: "image/png" });
+			Object.defineProperty(watermarkInput[0], "files", {
+			  value: [file],
+			  writable: false,
+			});
+			updateWatermarkLabel();
+		  }
+	}
+
+	loadWatermarkFromSession();
+
+function updateWatermarkLabel() {
+  const label = $('#watermark-input-label');
+  if (watermarkInput[0].files.length) {
+    label.text('Watermark (Using existing)');
+  } else {
+    label.text('Watermark');
+  }
+}
+
+$("#watermark-input").on("change", function () {
+  updateWatermarkLabel();
+});
 	
 });
