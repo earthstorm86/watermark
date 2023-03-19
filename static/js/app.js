@@ -7,10 +7,11 @@ $(document).ready(function() {
     const opacityRange = $('#opacity-range');
     const paddingRange = $('#padding-input');
     const opacityDisplay = $('#opacity-display');
-	const fancyboxContainer = $('<div style="display: none;"></div>');
     const confirmButton = $('#confirm-button');
     const scaleDisplay = $('#scale-display');
+	const downloads =$('#downloads');
     const watermarkPixelSize = $('<p>');
+	let watermarkedImages = [];
     let isUpdatingPreview = false;
     positionSelect.on("change", interruptAndUpdatePreview);
     scaleRange.on("input", interruptAndUpdatePreview);
@@ -18,7 +19,7 @@ $(document).ready(function() {
     paddingRange.on("input", interruptAndUpdatePreview);
 	imageInput.on("change", updatePreviewIfFilesExist);
 	watermarkInput.on("change", updatePreviewIfFilesExist);
-
+	$('#download-all-button').click(downloadAllAsZip);
 
     positionSelect.on('change', function() {
         saveSettings();
@@ -37,7 +38,9 @@ $(document).ready(function() {
     });
 
     paddingRange.on('input', function() {
-        saveSettings();
+        const padding = parseInt($(this).val());
+		paddingRange.text(`${padding}%`);
+		saveSettings();
         updatePreview();
     });
 
@@ -70,22 +73,35 @@ $(document).ready(function() {
 
         const totalImages = imageInput[0].files.length;
         let processedImages = 0;
+		 watermarkedImages = []; 
 
 
         for (const file of imageInput[0].files) {
             const img = await loadImageFromFile(file);
-            //const watermarkedDataURL = addWatermark(img, scaledWatermark, position);
-            const watermarkedDataURL = addWatermark(img, watermarkImg, position, scale, opacity, padding);
+            const watermarkedCanvas = addWatermark(img, watermarkImg, position, scale, opacity, padding);
+			const watermarkedBlob = await new Promise((resolve) => watermarkedCanvas.toBlob(resolve, 'image/jpeg'));
+			const watermarkedDataURL = URL.createObjectURL(watermarkedBlob);
+			
             const base64Data = watermarkedDataURL.split(',')[1];
             zip.file(`watermarked_${file.name}`, base64Data, {
                 base64: true
             });
+			
+			watermarkedImages.push({
+			  name: file.name,
+			  blob: watermarkedBlob
+			});
+
+			
 
             // Update progress value
             processedImages++;
             const progressValue = (processedImages / totalImages) * 100;
             $('#progress').val(progressValue);
             $('#progress-value').text(`${progressValue.toFixed(0)}%`);
+			
+			createDownloadButtons();
+			
         }
 
         const zipBlob = await zip.generateAsync({
@@ -95,19 +111,15 @@ $(document).ready(function() {
         downloadLink.href = URL.createObjectURL(zipBlob);
         downloadLink.download = 'watermarked_images.zip';
         downloadLink.textContent = `Download ${downloadLink.download}`;
+		downloads.show();
+       
+
+
+
         $('#loader').css('display', 'none');
         $('body').css('pointer-events', 'auto');
-        fancyboxContainer.append(downloadLink);
-		$('body').append(fancyboxContainer);
-		$.fancybox.open({
-		  src: fancyboxContainer,
-		  type: 'inline',
-		  opts: {
-			afterClose: function () {
-			  fancyboxContainer.remove();
-			},
-		  },
-		});
+		
+	  
 
     }
 
@@ -183,7 +195,7 @@ $(document).ready(function() {
             ctx.drawImage(paddedWatermark, x, y, watermarkWidth, watermarkHeight);
         }
         ctx.globalAlpha = 1;
-        return canvas.toDataURL('image/png');
+        return canvas;
     }
 
 
@@ -388,5 +400,46 @@ $(document).ready(function() {
 		updatePreview();
 	  }
 	}
+	
+	function createDownloadButtons() {
+	  const container = $('#download-buttons-container');
+	  container.empty();
 
+	  watermarkedImages.forEach((image, index) => {
+		const button = $('<button>')
+		  .addClass('download-button')
+		  .text(`Download ${image.name}`)
+		  .click(() => {
+			downloadImage(image);
+		  });
+		container.append(button);
+	  });
+	}
+	
+	function downloadImage(image) {
+	  const link = document.createElement('a');
+	  link.href = URL.createObjectURL(image.blob);
+	  link.download = `watermarked-${image.name}`;
+	  document.body.appendChild(link);
+	  link.click();
+	  document.body.removeChild(link);
+	}
+	
+	async function downloadAllAsZip() {
+	  const zip = new JSZip();
+
+	  watermarkedImages.forEach((image) => {
+		zip.file(`watermarked-${image.name}`, image.blob);
+	  });
+
+	  const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+	  const link = document.createElement('a');
+	  link.href = URL.createObjectURL(zipBlob);
+	  link.download = 'watermarked-images.zip';
+	  document.body.appendChild(link);
+	  link.click();
+	  document.body.removeChild(link);
+	}
+	
 });

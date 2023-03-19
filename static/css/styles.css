@@ -14,7 +14,9 @@ body {
 }
 
 canvas{
+	width:800px;
 	max-width:100%;
+	max-height:800px;
 }
 
 h1 {
@@ -41,7 +43,10 @@ select, input[type="range"] {
   font-size: 0.9rem;
 }
 
-#confirm-button {
+#downloads{
+	display:none;
+}
+button {
   font-size: 1.1rem;
   padding: 0.5rem 1rem;
   border: none;
@@ -50,6 +55,7 @@ select, input[type="range"] {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
+  margin-bottom:5px;
 }
 
 #confirm-button:hover {

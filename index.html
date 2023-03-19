@@ -7,8 +7,7 @@
   <link rel="stylesheet" href="static/css/styles.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.css" />
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.5.7/jquery.fancybox.min.js"></script>
+
 
 </head>
 <body>
@@ -47,8 +46,18 @@
       <input type="range" id="opacity-range" min="0.01" max="1" step="0.01" value="1">
       <span id="opacity-display">100%</span>
     </div>
-    <button id="confirm-button">Confirm</button>
+    <button id="confirm-button">Apply Watermarks to all images</button>
   </div>
+   <div id="downloads">
+   <h3>Downloads</h3>
+   <button id="download-all-button">Download All as ZIP</button>
+   <div id="download-buttons-container">
+		<h2>Download Images</h2>
+				
+		</div>
+		
+	</div>
+
   <!-- Add this inside the container div -->
 <div id="preview-container">
   <h2>Preview of first image</h2>
@@ -63,7 +72,7 @@
       <span id="progress-value">0%</span>
     </div>
   </div>
-  <div id="fancy-box"style="display: none;"></div>
+
   
 
   <script src="static/js/app.js"></script>
