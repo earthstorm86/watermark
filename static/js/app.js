@@ -24,7 +24,7 @@ $(document).ready(function() {
 
 		const file = e.target.files[0];
 		const base64String = await blobToBase64(file);
-		sessionStorage.setItem("watermarkImage", base64String);
+		localStorage.setItem("watermarkImage", base64String);
 	  });
 	
 	
@@ -67,7 +67,7 @@ $(document).ready(function() {
         const opacity = parseFloat(opacityRange.val());
         const padding = parseInt(paddingRange.val());
 
-		 if (!imageInput[0].files.length || (!watermarkInput[0].files.length && !sessionStorage.getItem("savedWatermark"))) {
+		 if (!imageInput[0].files.length || (!watermarkInput[0].files.length && !localStorage.getItem("savedWatermark"))) {
 			alert('Please select both image(s) and a watermark.');
 			return;
 		  }
@@ -461,7 +461,7 @@ $(document).ready(function() {
 	}
 	
 	async function loadWatermarkFromSession() {
-		 const savedWatermarkBase64String = sessionStorage.getItem("watermarkImage");
+		 const savedWatermarkBase64String = localStorage.getItem("watermarkImage");
 
 		  
 		  if (savedWatermarkBase64String) {
