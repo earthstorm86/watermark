@@ -477,7 +477,10 @@ $(document).ready(function() {
 		}
 	}
 
-	loadWatermarkFromSession();
+$(document).ready(function () {
+    loadWatermarksFromSession();
+    $("#watermark-select").on("change", handleWatermarkSelectionChange);
+});
 
 function updateWatermarkLabel() {
   const label = $('#watermark-input-label');
@@ -488,8 +491,108 @@ function updateWatermarkLabel() {
   }
 }
 
-$("#watermark-input").on("change", function () {
-  updateWatermarkLabel();
+$("#watermark-input").on("change", async function () {
+    updateWatermarkLabel();
+    // Check if user has selected new file
+    if (watermarkInput[0].files.length) {
+        // User has selected new file. Convert it to base64 and store in localStorage
+        const newWatermarkBlob = watermarkInput[0].files[0];
+        const base64String = await blobToBase64(newWatermarkBlob);
+        localStorage.setItem("watermarkImage", base64String);
+    }
+
+	
 });
+
+document.getElementById('watermark-input').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  var reader = new FileReader();
+
+  reader.onloadend = function() {
+    var base64String = reader.result;
+    var savedWatermarksBase64Strings = JSON.parse(localStorage.getItem('savedWatermarksBase64Strings')) || [];
+    savedWatermarksBase64Strings.push(base64String);
+    localStorage.setItem('savedWatermarksBase64Strings', JSON.stringify(savedWatermarksBase64Strings));
+  }
+
+  reader.readAsDataURL(file);
+});
+
+
+
+// Call this function when the page loads
+async function loadWatermarksFromSession() {
+    const savedWatermarksBase64Strings = localStorage.getItem("watermarkImages");  // assuming watermarkImages is an array of base64 strings
+    if (savedWatermarksBase64Strings) {
+        // Create UI for selecting from multiple watermarks
+        // Here, just regenerate the file input to be a select input
+        savedWatermarksBase64Strings.forEach((base64String, index) => {
+            const option = new Option(`Watermark ${index + 1}`, index);
+            $("#watermark-select").append(option);  // assuming watermark-select is your select element's ID
+        });
+    }
+	
+	if (savedWatermarksBase64Strings) {
+    // ...
+
+		// If there are saved watermarks, show the select element
+		$("#watermark-select").show();
+	} else {
+		// Otherwise, hide the select element
+		$("#watermark-select").hide();
+	}
+}
+// Variable to store the currently selected watermark
+var selectedWatermarkBase64String;
+
+async function handleWatermarkSelectionChange() {
+    const selectedWatermarkIndex = $("#watermark-select").val();
+    const savedWatermarksBase64Strings = JSON.parse(localStorage.getItem('savedWatermarksBase64Strings')) || [];
+    const selectedWatermarkBase64String = savedWatermarksBase64Strings[selectedWatermarkIndex];
+
+    if (selectedWatermarkBase64String) {
+        const response = await fetch(selectedWatermarkBase64String);
+        const blob = await response.blob();
+
+        const file = new File([blob], "watermark.png", { type: "image/png" });
+        Object.defineProperty(watermarkInput[0], "files", {
+            value: [file],
+            writable: false,
+        });
+        updateWatermarkLabel();
+
+        // Assuming that updatePreview is the function that refreshes the live preview
+        updatePreview();
+    }
+}
+
+$(function() {
+  loadWatermarksFromSession();
+  $("#watermark-select").on("change", handleWatermarkSelectionChange);
+
+  var savedWatermarksBase64Strings = JSON.parse(localStorage.getItem('savedWatermarksBase64Strings')) || [];
+  if (savedWatermarksBase64Strings.length > 0) {
+    var watermarkSelect = document.getElementById('watermark-select');
+    watermarkSelect.style.display = 'block';
+    for (var i = 0; i < savedWatermarksBase64Strings.length; i++) {
+      var option = document.createElement('option');
+      option.value = i; // Set the value to the index of the watermark, not the base64 string itself
+      option.text = 'Watermark ' + (i + 1);
+      watermarkSelect.add(option);
+    }
+  }
+
+  // Listen for the 'change' event on the file input too
+  $("#watermark-input").on("change", function(e) {
+    var file = e.target.files[0];
+    var reader = new FileReader();
+    reader.onloadend = function() {
+      selectedWatermarkBase64String = reader.result;
+    }
+    reader.readAsDataURL(file);
+  });
+});
+
+
 	
 });
