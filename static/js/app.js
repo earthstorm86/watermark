@@ -62,75 +62,72 @@ $(document).ready(function() {
     loadSettings();
 
     async function processImages() {
-        const position = positionSelect.val();
-        const scale = parseFloat(scaleRange.val());
-        const opacity = parseFloat(opacityRange.val());
-        const padding = parseInt(paddingRange.val());
+		const position = positionSelect.val();
+		const scale = parseFloat(scaleRange.val());
+		const opacity = parseFloat(opacityRange.val());
+		const padding = parseInt(paddingRange.val());
 
-		 if (!imageInput[0].files.length || (!watermarkInput[0].files.length && !localStorage.getItem("savedWatermark"))) {
+		if (!imageInput[0].files.length || (!watermarkInput[0].files.length && !localStorage.getItem("savedWatermark"))) {
 			alert('Please select both image(s) and a watermark.');
 			return;
-		  }
+		}
 
-        const watermarkImg = await loadImageFromFile(watermarkInput[0].files[0]);
-        const scaledWatermark = scaleImage(watermarkImg, scale);
+		const watermarkImg = await loadImageFromFile(watermarkInput[0].files[0]);
+		const scaledWatermark = scaleImage(watermarkImg, scale);
 
-        const zip = new JSZip();
+		const zip = new JSZip();
 
-        $('#loader').css('display', 'flex');
-        $('body').css('pointer-events', 'none');
+		$('#loader').css('display', 'flex');
+		$('body').css('pointer-events', 'none');
 
-        const totalImages = imageInput[0].files.length;
-        let processedImages = 0;
-		 watermarkedImages = []; 
+		const totalImages = imageInput[0].files.length;
+		let processedImages = 0;
+		watermarkedImages = [];
 
+		for (const file of imageInput[0].files) {
+			let imageFile = file;
 
-        for (const file of imageInput[0].files) {
-            const img = await loadImageFromFile(file);
-            const watermarkedCanvas = addWatermark(img, watermarkImg, position, scale, opacity, padding);
-			const watermarkedBlob = await new Promise((resolve) => watermarkedCanvas.toBlob(resolve, 'image/jpeg'));
+			// If the file type is WebP, convert it to PNG
+			if(file.type === "image/webp") {
+				imageFile = await convertWebPtoPNG(file);
+			}
+
+			const img = await loadImageFromFile(imageFile);
+			const watermarkedCanvas = addWatermark(img, watermarkImg, position, scale, opacity, padding);
+			const watermarkedBlob = await new Promise((resolve) => watermarkedCanvas.toBlob(resolve, 'image/png'));
 			const watermarkedDataURL = URL.createObjectURL(watermarkedBlob);
-			
-            const base64Data = watermarkedDataURL.split(',')[1];
-            zip.file(`watermarked_${file.name}`, base64Data, {
-                base64: true
-            });
-			
-			watermarkedImages.push({
-			  name: file.name,
-			  blob: watermarkedBlob
+
+			const base64Data = watermarkedDataURL.split(',')[1];
+			zip.file(`watermarked_${imageFile.name}`, base64Data, {
+				base64: true
 			});
 
-			
+			watermarkedImages.push({
+				name: imageFile.name,
+				blob: watermarkedBlob
+			});
 
-            // Update progress value
-            processedImages++;
-            const progressValue = (processedImages / totalImages) * 100;
-            $('#progress').val(progressValue);
-            $('#progress-value').text(`${progressValue.toFixed(0)}%`);
-			
+			// Update progress value
+			processedImages++;
+			const progressValue = (processedImages / totalImages) * 100;
+			$('#progress').val(progressValue);
+			$('#progress-value').text(`${progressValue.toFixed(0)}%`);
+
 			createDownloadButtons();
-			
-        }
+		}
 
-        const zipBlob = await zip.generateAsync({
-            type: 'blob'
-        });
-        const downloadLink = document.createElement('a');
-        downloadLink.href = URL.createObjectURL(zipBlob);
-        downloadLink.download = 'watermarked_images.zip';
-        downloadLink.textContent = `Download ${downloadLink.download}`;
+		const zipBlob = await zip.generateAsync({
+			type: 'blob'
+		});
+		const downloadLink = document.createElement('a');
+		downloadLink.href = URL.createObjectURL(zipBlob);
+		downloadLink.download = 'watermarked_images.zip';
+		downloadLink.textContent = `Download ${downloadLink.download}`;
 		downloads.show();
-       
 
-
-
-        $('#loader').css('display', 'none');
-        $('body').css('pointer-events', 'auto');
-		
-	  
-
-    }
+		$('#loader').css('display', 'none');
+		$('body').css('pointer-events', 'auto');
+	}
 
     function loadImageFromFile(file) {
         return new Promise((resolve) => {
@@ -603,24 +600,45 @@ function convertWebPtoPNG(file) {
     reader.readAsDataURL(file);
     reader.onload = function (event) {
       const img = new Image();
+      img.src = event.target.result;
       img.onload = function() {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
-        const dataURL = canvas.toDataURL('image/png');
-        fetch(dataURL)
-          .then(res => res.blob())
-          .then(blob => {
-            const convertedFile = new File([blob], file.name, { type: "image/png" });
-            resolve(convertedFile);
-          });
+        canvas.toBlob(function(blob) {
+          // Replace the original file's extension with .png
+          const filename = file.name.replace(/\.[^/.]+$/, "") + ".png";
+          const newFile = new File([blob], filename, {type: "image/png"});
+          resolve(newFile);
+        }, 'image/png');
       }
-      img.src = event.target.result;
+      img.onerror = error => reject(error);
     }
     reader.onerror = error => reject(error);
   });
 }
+
+
+$('#image-input').on('change', async function () {
+    let files = Array.from(this.files);
+
+    const conversionPromises = files.map(async (file, i) => {
+        if(file.type === 'image/webp') {
+            try {
+                const pngFile = await convertWebPtoPNG(file);
+                files[i] = pngFile; // replace the original file with the converted PNG
+            } catch(error) {
+                console.error('Error converting WebP image to PNG: ', error);
+            }
+        }
+    });
+
+    // wait for all the conversions to finish
+    await Promise.all(conversionPromises);
+
+    // now continue processing the 'files' array as normal...
+});
 	
 });
