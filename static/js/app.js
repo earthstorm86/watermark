@@ -459,22 +459,22 @@ $(document).ready(function() {
 		reader.readAsDataURL(blob);
 	  });
 	}
-	
+		
 	async function loadWatermarkFromSession() {
-		 const savedWatermarkBase64String = localStorage.getItem("watermarkImage");
+		const savedWatermarkBase64String = localStorage.getItem("watermarkImage");
 
-		  
-		  if (savedWatermarkBase64String) {
+		// Only load the watermark from local storage if the user has not provided a file
+		if (savedWatermarkBase64String && watermarkInput[0].files.length === 0) {
 			const response = await fetch(savedWatermarkBase64String);
 			const blob = await response.blob();
 
 			const file = new File([blob], "watermark.png", { type: "image/png" });
 			Object.defineProperty(watermarkInput[0], "files", {
-			  value: [file],
-			  writable: false,
+				value: [file],
+				writable: false,
 			});
 			updateWatermarkLabel();
-		  }
+		}
 	}
 
 	loadWatermarkFromSession();
