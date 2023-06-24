@@ -552,16 +552,20 @@ async function handleWatermarkSelectionChange() {
 
     if (selectedWatermarkBase64String) {
         const response = await fetch(selectedWatermarkBase64String);
-        const blob = await response.blob();
+        let blob = await response.blob();
 
-        const file = new File([blob], "watermark.png", { type: "image/png" });
+        let file;
+        if (blob.type === "image/webp") {
+          file = await convertWebPtoPNG(blob);
+        } else {
+          file = new File([blob], "watermark.png", { type: "image/png" });
+        }
+
         Object.defineProperty(watermarkInput[0], "files", {
             value: [file],
             writable: false,
         });
         updateWatermarkLabel();
-
-        // Assuming that updatePreview is the function that refreshes the live preview
         updatePreview();
     }
 }
@@ -593,6 +597,30 @@ $(function() {
   });
 });
 
-
+function convertWebPtoPNG(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = function (event) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const dataURL = canvas.toDataURL('image/png');
+        fetch(dataURL)
+          .then(res => res.blob())
+          .then(blob => {
+            const convertedFile = new File([blob], file.name, { type: "image/png" });
+            resolve(convertedFile);
+          });
+      }
+      img.src = event.target.result;
+    }
+    reader.onerror = error => reject(error);
+  });
+}
 	
 });
