@@ -17,7 +17,7 @@ $(document).ready(function() {
     scaleRange.on("input", interruptAndUpdatePreview);
     opacityRange.on("input", interruptAndUpdatePreview);
     paddingRange.on("input", interruptAndUpdatePreview);
-	imageInput.on("change", updatePreviewIfFilesExist);
+	imageInput.on("change", updatePreview);
 	watermarkInput.on("change", updatePreviewIfFilesExist);
 	
 	
@@ -259,61 +259,92 @@ $(document).ready(function() {
 
         return canvas;
     }
+async function updatePreview() {
+    if (isUpdatingPreview) {
+        return;
+    }
 
-    async function updatePreview() {
-        if (isUpdatingPreview) {
-            return;
-        }
+    isUpdatingPreview = true;
 
-        isUpdatingPreview = true;
+    const imageFiles = imageInput.get(0).files;
+    if (imageFiles.length === 0) {
+        isUpdatingPreview = false;
+        return;
+    }
 
-        const imageFiles = imageInput.get(0).files;
-        if (imageFiles.length === 0) {
+    let watermarkImage = null;
+    
+    // If watermark is selected in the thumbnails
+    if (selectedWatermarkBase64String) {
+        try {
+            // Convert the Base64 string back to a File
+            const watermarkFile = base64StringToFile(selectedWatermarkBase64String, 'watermark.png');
+            watermarkImage = await loadImage(watermarkFile);
+        } catch (error) {
+            console.error(error);
             isUpdatingPreview = false;
             return;
         }
-
-        if (imageFiles.length === 0) return;
-
-        const firstImage = await loadImage(imageFiles[0]);
-        const watermarkImage = await loadImage(watermarkInput.get(0).files[0]);
-        const position = positionSelect.val();
-        const scale = parseFloat(scaleRange.val());
-        const opacity = parseFloat(opacityRange.val());
-        const padding = parseFloat(paddingRange.val());
-
-        const watermarkedImageBlob = await addWatermarkAsBlob(firstImage, watermarkImage, position, scale, opacity, padding);
-
-
-        if (!isUpdatingPreview) {
-            return;
-        }
-
-        const previewCanvas = document.getElementById("preview-canvas");
-        const ctx = previewCanvas.getContext("2d");
-        previewCanvas.width = firstImage.width;
-        previewCanvas.height = firstImage.height;
-
-        const previewImage = await createImageBitmap(watermarkedImageBlob);
-        ctx.drawImage(previewImage, 0, 0);
-
-        isUpdatingPreview = false;
     }
 
+    const firstImage = await loadImage(imageFiles[0]);
 
-    function loadImage(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const image = new Image();
-                image.onload = () => {
-                    resolve(image);
-                };
-                image.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
+    const position = positionSelect.val();
+    const scale = parseFloat(scaleRange.val());
+    const opacity = parseFloat(opacityRange.val());
+    const padding = parseFloat(paddingRange.val());
+
+    let watermarkedImageBlob = firstImage;
+    if (watermarkImage) {
+        watermarkedImageBlob = await addWatermarkAsBlob(firstImage, watermarkImage, position, scale, opacity, padding);
     }
+
+    if (!isUpdatingPreview) {
+        return;
+    }
+
+    const previewCanvas = document.getElementById("preview-canvas");
+    const ctx = previewCanvas.getContext("2d");
+    previewCanvas.width = firstImage.width;
+    previewCanvas.height = firstImage.height;
+
+    const previewImage = await createImageBitmap(watermarkedImageBlob);
+    ctx.drawImage(previewImage, 0, 0);
+
+    isUpdatingPreview = false;
+}
+
+function base64StringToFile(base64String, filename) {
+    const arr = base64String.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while(n--){
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, {type:mime});
+}
+
+
+	function loadImage(input) {
+		return new Promise((resolve, reject) => {
+			if (input instanceof Blob || input instanceof File) {
+				const reader = new FileReader();
+				reader.onload = (event) => {
+					const image = new Image();
+					image.onload = () => {
+						resolve(image);
+					};
+					image.src = event.target.result;
+				};
+				reader.readAsDataURL(input);
+			} else {
+				reject(new Error("Invalid input: expected a Blob or File"));
+			}
+		});
+	}
+
 
 
     async function addWatermarkAsBlob(img, watermark, position, scale, opacity, padding) {
@@ -593,15 +624,20 @@ async function loadWatermarksAsThumbnails() {
     // Add 'selected-thumbnail' class to the first thumbnail by default
     if (i === 0) {
       watermarkThumbnail.classList.add('selected-thumbnail');
+      // Set the selected watermark base64 string
+      selectedWatermarkBase64String = savedWatermarksBase64Strings[i];
     }
 
     watermarkThumbnail.addEventListener('click', handleWatermarkThumbnailClick);
     watermarkThumbnailsContainer.appendChild(watermarkThumbnail);
   }
-  if( savedWatermarksBase64Strings.length >0){
-	updatePreview();
+
+  // Update preview if there's at least one watermark
+  if (savedWatermarksBase64Strings.length > 0) {
+    await updatePreview();
   }
 }
+
 
 
 async function handleWatermarkThumbnailClick(e) {
