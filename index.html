@@ -27,12 +27,13 @@
       <label class="input-label">Images</label>
       <input type="file" id="image-input" multiple accept="image/jpeg, image/png, image/jpg">
     </div>
-    <div class="input-wrapper">
-      <label id="watermark-input-label">Watermark</label>
-      <input type="file" id="watermark-input" accept="image/jpeg, image/png, image/jpg, , image/webp">
-      <!-- Added a select element here for user to choose a watermark -->
-      <select id="watermark-select" style="display: none;"></select>
-    </div>
+	  <div class="input-wrapper">
+		<label id="watermark-input-label">Watermark</label>
+		<input type="file" id="watermark-input" accept="image/jpeg, image/png, image/jpg, , image/webp">
+		
+		<!-- Added a div element here to hold the watermark thumbnails -->
+		<div id="watermark-thumbnails"></div>
+	  </div>
     <div class="input-wrapper">
       <label class="input-label">Position</label>
       <select id="position-select">

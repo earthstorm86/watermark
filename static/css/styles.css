@@ -103,6 +103,32 @@ button {
   }
 }
 
+.watermark-thumbnail {
+  width: 150px;  /* Adjust the size as needed */
+  height: auto;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.selected-thumbnail {
+  border: 2px solid #000; /* use whatever color you prefer */
+}
+
+.watermark-thumbnails{
+  display: inline-block;
+  position: relative;
+  margin: 10px;
+}
+
+.remove-thumbnail {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: red;
+  color: white;
+  cursor: pointer;
+}
+
 /* Responsive styles */
 @media screen and (max-width: 768px) {
   .container {
