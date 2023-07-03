@@ -22,49 +22,33 @@
 <body>
   <div class="container">
     <h1>Bearden.Art - Watermarks</h1>
-	<p>A simple tool for watermarking your images and downloading each or a zip file of all. </p>
-    <div class="input-wrapper">
-      <label class="input-label">Images</label>
-      <input type="file" id="image-input" multiple accept="image/jpeg, image/png, image/jpg">
-    </div>
-	  <div class="input-wrapper">
-		<label id="watermark-input-label">Watermark</label>
-		<input type="file" id="watermark-input" accept="image/jpeg, image/png, image/jpg, , image/webp">
-		
-		<!-- Added a div element here to hold the watermark thumbnails -->
-		<div id="watermark-thumbnails"></div>
+    <p>Watermark and downloading each image or a a full .zip file.</p>
+	<div class="input-wrapper">
+	  <div class="file-input-container">
+		<label for="image-input" class="file-input-label">
+		  <span id="image-input-text">Select Images</span>
+		  <input type="file" id="image-input" multiple accept="image/jpeg, image/png, image/jpg, image/webp" hidden>
+		</label>
 	  </div>
-    <div class="input-wrapper">
-      <label class="input-label">Position</label>
-      <select id="position-select">
-        <option value="topleft">Top Left</option>
-        <option value="topright">Top Right</option>
-        <option value="bottomleft">Bottom Left</option>
-        <option value="bottomright">Bottom Right</option>
-        <option value="tile">Tile</option>
-      </select>
-    </div>
-    <div class="input-wrapper">
-      <label class="input-label">Scale</label>
-      <input type="range" id="scale-range" min="0.05" max="0.20" step="0.01" value="0.10">
-      <span id="scale-display">100%</span>
-    </div>
-    <div class="input-wrapper">
-      <label class="input-label">Opacity</label>
-      <input type="range" id="opacity-range" min="0.01" max="1" step="0.01" value="1">
-      <span id="opacity-display">100%</span>
-    </div>
+	</div>
+	<div class="input-wrapper">
+	  <div class="file-input-container">
+		<label for="watermark-input" class="file-input-label">
+		  <span id="watermark-input-text">Upload watermark</span>
+		  <input type="file" id="watermark-input" accept="image/jpeg, image/png, image/jpg, image/webp" hidden>
+		</label>
+	  </div>
+	</div>
 
-	 <div class="input-wrapper">
-		<label for="padding-input">Padding</label>
-		<input type="number" id="padding-input" min="0" value="100" step="1">
-    </div>
-	
+	 <h3>Existing watermarks</h3>
+		<div id="watermark-thumbnails"></div>
 
-    <button id="confirm-button">Apply Watermarks to all images</button><br><br>
+    <button id="confirm-button">Apply Watermarks to all images</button>
+
+
 	
 	 <div id="downloads">
-   <h3>Downloads</h3>
+   <h3>Download watermarked images</h3>
    <button id="download-all-button">Download All as ZIP</button>
    <div id="download-buttons-container">
 		<h2>Download Images</h2>
@@ -75,8 +59,36 @@
 
 
 <div id="preview-container">
+<h3>Preview</h3>
+    <button class="accordion">Watermark settings</button>
+    <div class="panel">
+		<div class="input-wrapper">
+		  <label class="input-label">Position</label>
+		  <select id="position-select">
+			<option value="topleft">Top Left</option>
+			<option value="topright">Top Right</option>
+			<option value="bottomleft">Bottom Left</option>
+			<option value="bottomright">Bottom Right</option>
+			<option value="tile">Tile</option>
+		  </select>
+		</div>
+		<div class="input-wrapper">
+		  <label class="input-label">Scale</label>
+		  <input type="range" id="scale-range" min="0.05" max="0.20" step="0.01" value="0.10">
+		  <span id="scale-display">100%</span>
+		</div>
+		<div class="input-wrapper">
+		  <label class="input-label">Opacity</label>
+		  <input type="range" id="opacity-range" min="0.01" max="1" step="0.01" value="1">
+		  <span id="opacity-display">100%</span>
+		</div>
+
+		 <div class="input-wrapper">
+			<label for="padding-input">Padding</label>
+			<input type="number" id="padding-input" min="0" value="100" step="1">
+		</div>
+    </div>
   <canvas id="preview-canvas"></canvas>
-<i>Generated previews are not full resolution - Use Apply Watermarks to all images to get your original resolution.</i>
 </div>
   <div id="loader" style="display: none;">
     <div id="bear-animation">
@@ -88,14 +100,30 @@
     </div>
   </div>
 
-  
-  <p>Warning: This is just a quick prototype for myself to tinker with. There is likely bugs!</p>
-<p><a href="https://www.instagram.com/Bearden.Art" target="_blank">Bearden.Art</a></p>
-	
   </div>
-      <footer>
-        <a href="/">Homepage</a> | <a href="https://github.com/earthstorm86/watermark/issues" target="_blank">Submit an issue / feedback</a> | <a href="legal.html#privacy">Privacy Policy</a> | <a href="legal.html#terms">Terms of Service</a> | <a href="https://www.instagram.com/Bearden.Art" target="_blank">Bearden.Art</a>
-    </footer>
+<footer>
+  <a href="/">Homepage</a> | 
+  <a href="https://github.com/earthstorm86/watermark/issues" target="_blank">Submit an issue / feedback</a> | 
+  <a href="legal.html#privacy">Privacy Policy</a> | 
+  <a href="legal.html#terms">Terms of Service</a> | 
+  <a href="https://www.instagram.com/Bearden.Art" target="_blank">Bearden.Art</a>
+</footer>
   <script src="static/js/app.js"></script>
+  
+  <script>
+  var acc = document.getElementsByClassName("accordion");
+var i;
+
+for (i = 0; i < acc.length; i++) {
+  acc[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var panel = this.nextElementSibling;
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      panel.style.display = "block";
+    }
+  });
+}</script>
 </body>
 </html>

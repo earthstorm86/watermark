@@ -11,6 +11,8 @@ $(document).ready(function() {
     const scaleDisplay = $('#scale-display');
 	const downloads =$('#downloads');
     const watermarkPixelSize = $('<p>');
+	var selectedWatermarkBase64String;
+	let selectedWatermarkFile = null;  // declare this at a scope accessible by both functions
 	let watermarkedImages = [];
     let isUpdatingPreview = false;
     positionSelect.on("change", interruptAndUpdatePreview);
@@ -60,12 +62,22 @@ $(document).ready(function() {
 		const opacity = parseFloat(opacityRange.val());
 		const padding = parseInt(paddingRange.val());
 
-		if (!imageInput[0].files.length || (!watermarkInput[0].files.length && !localStorage.getItem("savedWatermark"))) {
+		const watermarkThumbnails = $('#watermark-thumbnails').children();
+
+		if (!imageInput[0].files.length && ((!watermarkInput[0].files.length || !watermarkThumbnails.length))) {
 			alert('Please select both image(s) and a watermark.');
 			return;
 		}
 
-		const watermarkImg = await loadImageFromFile(watermarkInput[0].files[0]);
+		let watermarkImg;
+		
+		if (selectedWatermarkBase64String) {
+			const watermarkFile = base64StringToFile(selectedWatermarkBase64String, 'watermark.png');
+			watermarkImg = await loadImageFromFile(watermarkFile);
+		} else {
+			watermarkImg = await loadImageFromFile(watermarkInput[0].files[0]);
+		}
+
 		const scaledWatermark = scaleImage(watermarkImg, scale);
 
 		const zip = new JSZip();
@@ -259,6 +271,8 @@ $(document).ready(function() {
 
         return canvas;
     }
+	
+	
 async function updatePreview() {
     if (isUpdatingPreview) {
         return;
@@ -494,22 +508,64 @@ function base64StringToFile(base64String, filename) {
 				value: [file],
 				writable: false,
 			});
-			updateWatermarkLabel();
 		}
 	}
 
-$(document).ready(function () {
-    loadWatermarksFromSession();
-    $("#watermark-select").on("change", handleWatermarkSelectionChange);
-});
 
-function updateWatermarkLabel() {
-  const label = $('#watermark-input-label');
-  if (watermarkInput[0].files.length) {
-    label.text('Watermark (Using existing)');
-  } else {
-    label.text('Watermark');
-  }
+
+function createThumbnail(base64String) {
+  // Create new img element and set its src attribute
+  var newThumbnail = document.createElement('img');
+  newThumbnail.src = base64String;
+
+  newThumbnail.onload = function() {
+    // Set class and onclick handler after the image is loaded
+    newThumbnail.classList.add('watermark-thumbnail');
+    newThumbnail.onclick = handleThumbnailClick;
+
+    // Create new div for the thumbnail and remove button
+    var thumbnailContainer = document.createElement('div');
+    thumbnailContainer.classList.add('thumbnail-container');
+
+    // Create remove button
+    var removeButton = document.createElement('button');
+    removeButton.innerHTML = "X";
+    removeButton.classList.add('remove-thumbnail');
+
+    // Handle the click event for the remove button
+    removeButton.onclick = function(e) {
+      e.stopPropagation(); // Prevent the thumbnail click event
+
+      // Remove the watermark from savedWatermarksBase64Strings
+      var index = savedWatermarksBase64Strings.indexOf(base64String);
+      if (index !== -1) {
+        savedWatermarksBase64Strings.splice(index, 1);
+      }
+      localStorage.setItem('savedWatermarksBase64Strings', JSON.stringify(savedWatermarksBase64Strings));
+
+      // Remove the thumbnail from the DOM
+      thumbnailContainer.remove();
+
+      // If this thumbnail was selected, deselect it
+      if (selectedWatermarkBase64String === base64String) {
+        selectedWatermarkBase64String = null;
+        updatePreview();
+      }
+    };
+
+    // Append the thumbnail and the remove button to the container
+    thumbnailContainer.appendChild(newThumbnail);
+    thumbnailContainer.appendChild(removeButton);
+
+    var thumbnailsContainer = document.getElementById('watermark-thumbnails');
+    thumbnailsContainer.appendChild(thumbnailContainer);
+
+    // Select the new thumbnail
+    unselectWatermarkThumbnails();
+    newThumbnail.classList.add('selected');
+    selectedWatermarkBase64String = base64String;
+    updatePreview();
+  };
 }
 
 document.getElementById('watermark-input').addEventListener('change', function(e) {
@@ -523,69 +579,21 @@ document.getElementById('watermark-input').addEventListener('change', function(e
     if (!savedWatermarksBase64Strings.includes(base64String)) {
       savedWatermarksBase64Strings.push(base64String);
       localStorage.setItem('savedWatermarksBase64Strings', JSON.stringify(savedWatermarksBase64Strings));
-
-      // Create new img element and set its src attribute
-      var newThumbnail = document.createElement('img');
-      newThumbnail.src = base64String;
-
-      newThumbnail.onload = function() {
-        // Set class and onclick handler after the image is loaded
-        newThumbnail.classList.add('watermark-thumbnail');
-        newThumbnail.onclick = handleThumbnailClick;
-
-        // Create new div for the thumbnail and remove button
-        var thumbnailContainer = document.createElement('div');
-        thumbnailContainer.classList.add('thumbnail-container');
-
-        // Create remove button
-        var removeButton = document.createElement('button');
-        removeButton.innerHTML = "X";
-        removeButton.classList.add('remove-thumbnail');
-
-        // Handle the click event for the remove button
-        removeButton.onclick = function(e) {
-          e.stopPropagation(); // Prevent the thumbnail click event
-
-          // Remove the watermark from savedWatermarksBase64Strings
-          var index = savedWatermarksBase64Strings.indexOf(base64String);
-          if (index !== -1) {
-            savedWatermarksBase64Strings.splice(index, 1);
-          }
-          localStorage.setItem('savedWatermarksBase64Strings', JSON.stringify(savedWatermarksBase64Strings));
-
-          // Remove the thumbnail from the DOM
-          thumbnailContainer.remove();
-
-          // If this thumbnail was selected, deselect it
-          if (selectedWatermarkBase64String === base64String) {
-            selectedWatermarkBase64String = null;
-            updatePreview();
-          }
-        };
-
-        // Append the thumbnail and the remove button to the container
-        thumbnailContainer.appendChild(newThumbnail);
-        thumbnailContainer.appendChild(removeButton);
-
-        var thumbnailsContainer = document.getElementById('watermark-thumbnails');
-        thumbnailsContainer.appendChild(thumbnailContainer);
-
-        // Select the new thumbnail
-        unselectWatermarkThumbnails();
-        newThumbnail.classList.add('selected');
-        selectedWatermarkBase64String = base64String;
-        updatePreview();
-      };
+      
+      createThumbnail(base64String);
     }
   }
 
   reader.readAsDataURL(file);
 });
 
+// Create thumbnails for existing watermarks when the page loads
+var savedWatermarksBase64Strings = JSON.parse(localStorage.getItem('savedWatermarksBase64Strings')) || [];
+savedWatermarksBase64Strings.forEach(createThumbnail);
 
 
 function unselectWatermarkThumbnails() {
-  var thumbnails = document.getElementsByClassName('thumbnail');
+  var thumbnails = document.getElementsByClassName('watermark-thumbnail');
   for (var i = 0; i < thumbnails.length; i++) {
     thumbnails[i].classList.remove('selected');
   }
@@ -607,36 +615,6 @@ function handleThumbnailClick(event) {
   updatePreview();
 }
 
-
-async function loadWatermarksAsThumbnails() {
-  const savedWatermarksBase64Strings = JSON.parse(localStorage.getItem('savedWatermarksBase64Strings')) || [];
-  const watermarkThumbnailsContainer = document.getElementById('watermark-thumbnails');
-
-  // Clear any existing watermark thumbnails first
-  watermarkThumbnailsContainer.innerHTML = '';
-
-  for (let i = 0; i < savedWatermarksBase64Strings.length; i++) {
-    const watermarkThumbnail = document.createElement('img');
-    watermarkThumbnail.src = savedWatermarksBase64Strings[i];
-    watermarkThumbnail.dataset.index = i;
-    watermarkThumbnail.classList.add('watermark-thumbnail');
-
-    // Add 'selected-thumbnail' class to the first thumbnail by default
-    if (i === 0) {
-      watermarkThumbnail.classList.add('selected-thumbnail');
-      // Set the selected watermark base64 string
-      selectedWatermarkBase64String = savedWatermarksBase64Strings[i];
-    }
-
-    watermarkThumbnail.addEventListener('click', handleWatermarkThumbnailClick);
-    watermarkThumbnailsContainer.appendChild(watermarkThumbnail);
-  }
-
-  // Update preview if there's at least one watermark
-  if (savedWatermarksBase64Strings.length > 0) {
-    await updatePreview();
-  }
-}
 
 
 
@@ -671,48 +649,19 @@ async function handleWatermarkThumbnailClick(e) {
     dataTransfer.items.add(file);
     watermarkInput[0].files = dataTransfer.files;
 
-    updateWatermarkLabel();
-
     // Call updatePreview to refresh the image with the new watermark
     updatePreview();
   }
 }
 
 
-// Call this function when the page loads
-async function loadWatermarksFromSession() {
-    const savedWatermarksBase64Strings = localStorage.getItem("watermarkImages");  // assuming watermarkImages is an array of base64 strings
-    if (savedWatermarksBase64Strings) {
-        // Create UI for selecting from multiple watermarks
-        // Here, just regenerate the file input to be a select input
-        savedWatermarksBase64Strings.forEach((base64String, index) => {
-            const option = new Option(`Watermark ${index + 1}`, index);
-            $("#watermark-select").append(option);  // assuming watermark-select is your select element's ID
-        });
-    }
-	
-	if (savedWatermarksBase64Strings) {
-    // ...
 
-		// If there are saved watermarks, show the select element
-		$("#watermark-select").show();
-	} else {
-		// Otherwise, hide the select element
-		$("#watermark-select").hide();
-	}
-}
-// Variable to store the currently selected watermark
-var selectedWatermarkBase64String;
-
-let selectedWatermarkFile = null;  // declare this at a scope accessible by both functions
 
 async function handleWatermarkSelectionChange() {
     const selectedWatermarkIndex = $("#watermark-select").val();
     const savedWatermarksBase64Strings = JSON.parse(localStorage.getItem('savedWatermarksBase64Strings')) || [];
     const selectedWatermarkBase64String = savedWatermarksBase64Strings[selectedWatermarkIndex];
 	
-	console.log("Selected index: ", selectedWatermarkIndex);
-console.log("Selected watermark: ", selectedWatermarkBase64String);
 
     if (selectedWatermarkBase64String) {
         const response = await fetch(selectedWatermarkBase64String);
@@ -726,7 +675,6 @@ console.log("Selected watermark: ", selectedWatermarkBase64String);
         }
 
         selectedWatermarkFile = file;  // store the file in the new variable
-        updateWatermarkLabel();
 
         // Call updatePreview to refresh the image with the new watermark
         updatePreview();
@@ -748,8 +696,6 @@ async function loadWatermarkFromSession() {
             value: [file],
             writable: false,
         });
-        updateWatermarkLabel();
-
         // Check if there's an image already loaded
         if (imageInput[0].files.length > 0) {
             // Update the preview if there is
@@ -788,8 +734,6 @@ function convertWebPtoPNG(file) {
 }
 
 $(document).ready(function () {
-    loadWatermarksAsThumbnails();
-	//loadWatermarksIntoDropdown();
     loadWatermarkFromSession();
     // rest of your code
 });

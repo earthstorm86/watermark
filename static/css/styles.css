@@ -1,16 +1,19 @@
 body {
-  font-family: Arial, sans-serif;
-  background-color: #f8f8f8;
+    font-family: Arial, sans-serif;
+    background-color: #000;
+    color: #fff;
+	margin: 0;
 }
 
 .container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
-  background-color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0,0, 0.24);
-  border-radius: 4px;
+    max-width: 800px;
+	min-height: 100vh;
+    margin: 0 auto;
+    padding: 1rem;
+    text-align: center;
+    background-color: #000;
+    border-radius: 4px;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.19), 0px 6px 6px rgba(0, 0, 0, 0.23);
 }
 
 canvas{
@@ -47,16 +50,20 @@ select, input[type="range"] {
 	display:none;
 }
 button {
-  font-size: 1.1rem;
-  padding: 0.5rem 1rem;
-  border: none;
-  color: #fff;
-  background-color: #1e90ff;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom:5px;
-  line-break: anywhere;
+    font-size: 1.1rem;
+	padding: 20px;
+    border: none;
+    color: #fff;
+    background-color: #D46A4D;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
+	margin-top:20px;
+
+}
+
+button:hover {
+    background-color: #E87A60;
 }
 
 #confirm-button:hover {
@@ -108,25 +115,168 @@ button {
   height: auto;
   margin: 5px;
   cursor: pointer;
+  padding:20px;
 }
 
-.selected-thumbnail {
-  border: 2px solid #000; /* use whatever color you prefer */
+.selected {
+  border: 2px solid #D46A4D; /* use whatever color you prefer */
+}
+
+#watermark-thumbnails{
+	display:flex;
 }
 
 .watermark-thumbnails{
   display: inline-block;
   position: relative;
   margin: 10px;
+  pointer: hand;
 }
 
 .remove-thumbnail {
+position: relative;
+    border-radius: 0;
+    background: grey;
+    color: white;
+    display: inline;
+    cursor: pointer;
+    margin-top: 0;
+    height: 33px;
+    font-size: 12px;
+    padding: 10px;
+}
+
+.input-wrapper {
+    display: inline-block;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1rem;
+	
+    padding: 20px;
+
+}
+
+.input-label {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: #ddd;
+}
+
+input[type="file"], select, input[type="range"] {
+    font-size: 0.9rem;
+    background-color: #555;
+    color: #fff;
+    border: none;
+}
+
+button.accordion {
+  background-color: #008080;
+  color: #fff;
+  cursor: pointer;
+  padding: 18px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  outline: none;
+  transition: 0.4s;
+  position: relative;
+  border-radius: 0px;
+}
+
+button.accordion::after {
+  content: ' ▼';
+  position: absolute;
+  right: 10px;
+}
+
+button.accordion.active, button.accordion:hover {
+  background-color: #20A4A4;
+}
+
+button.accordion.active::after {
+  content: ' ▲';
+}
+
+div.panel {
+  padding: 0 18px;
+  display: none;
+  background-color: #333;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.file-input-container {
+  position: relative;
+  width: 200px;
+  height: 40px;
+}
+
+.file-input-label {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-color: #1e90ff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.file-input-label:hover {
+  background-color: #207cd1;
+}
+
+.file-input-label:active {
+  background-color: #1c7ab7;
+}
+
+#image-input {
   position: absolute;
   top: 0;
-  right: 0;
-  background: red;
-  color: white;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
   cursor: pointer;
+}
+
+#file-input-text {
+  pointer-events: none;
+}
+
+footer {
+  width: 100%;
+  background-color: #1e90ff;
+  color: #fff;
+  padding: 20px 0;
+  bottom: 0;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+footer a {
+  color: #fff;
+  margin: 0 10px;
+  text-decoration: none;
+  transition: color 0.3s ease-in-out;
+}
+
+footer a:hover {
+  color: #ffdead;
+}
+
+#preview-container{
+		padding:30px;
+}
+
+#downloads{
+	border: 1px solid #eee;
+	padding:20px;
+	margin-top:20px;
+	background-color: #333;
 }
 
 /* Responsive styles */
